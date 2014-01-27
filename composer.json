@@ -2,7 +2,7 @@
     "name": "ArhFrame util",
     "description": "Util class for arhframe",
     "keywords": ["Framework", "Util", "Arhframe"],
-    "homepage": "https://bitbucket.org/timoun/arhframephp/wiki/Home",
+    "homepage": "https://github.com/arhframe/util",
     "type": "library",
     "license": "MIT",
     "authors": [
