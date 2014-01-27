@@ -1,0 +1,23 @@
+{
+    "name": "ArhFrame util",
+    "description": "Util class for arhframe",
+    "keywords": ["Framework", "Util", "Arhframe"],
+    "homepage": "https://bitbucket.org/timoun/arhframephp/wiki/Home",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Arthur Halet",
+            "email": "arthurh.halet@gmail.com",
+            "homepage": "http://arthurh.fr"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "Arhframe\\Util": "src/"
+        }
+    },
+    "support": {
+          "email": "arthurh.halet@gmail.com"
+    }
+}
