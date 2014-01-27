@@ -3,7 +3,7 @@ namespace Arhframe\Util;
 /**
 *
 */
-final class UtilException extends Exception
+final class UtilException extends \Exception
 {
     public function __construct($message = "",$code=0, $previous = NULL)
     {
