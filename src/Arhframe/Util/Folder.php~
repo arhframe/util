@@ -184,7 +184,7 @@ class Folder
         return $finalArray;
     }
 
-    public function removeFiles($regex = "#.*#", $recursive = false)
+    public function removeFiles($regex, $recursive = false)
     {
         if (!$this->isFolder()) {
             throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
@@ -194,7 +194,7 @@ class Folder
         }
     }
 
-    public function removeFolders($regex = "#.*#", $recursive = false)
+    public function removeFolders($regex, $recursive = false)
     {
         if (!$this->isFolder()) {
             throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
