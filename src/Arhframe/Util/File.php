@@ -1,20 +1,39 @@
 <?php
 namespace Arhframe\Util;
 
-use Arhframe\Util\UtilException;
-
 /**
  *
  */
 class File
 {
+    /**
+     * @var string
+     */
     private $folder;
+    /**
+     * @var
+     */
     private $basename;
+    /**
+     * @var
+     */
     private $filename;
+    /**
+     * @var
+     */
     private $extension;
+    /**
+     * @var
+     */
     private $content;
+    /**
+     * @var bool
+     */
     private $isUrl = false;
 
+    /**
+     * @param $file
+     */
     function __construct($file)
     {
         if (preg_match('#^http(s){0,1}://#', $file)) {
@@ -30,6 +49,9 @@ class File
         $this->extension = $pathinfo['extension'];
     }
 
+    /**
+     * @return string
+     */
     public function getFolder()
     {
         $folder = $this->folder;
@@ -39,65 +61,77 @@ class File
         return $folder;
     }
 
+    /**
+     * @param $folder
+     * @return mixed
+     */
     public function setFolder($folder)
     {
         return $this->folder = $folder;
     }
 
-    public function getName()
-    {
-        return $this->basename;
-    }
-
+    /**
+     * @param $basename
+     * @return mixed
+     */
     public function setName($basename)
     {
         return $this->basename = $basename;
     }
 
+    /**
+     * @return mixed
+     */
     public function getBase()
     {
         return $this->filename;
     }
 
+    /**
+     * @param $filename
+     * @return mixed
+     */
     public function setBase($filename)
     {
         return $this->filename = $filename;
     }
 
+    /**
+     * @return mixed
+     */
     public function getExtension()
     {
         return $this->extension;
     }
 
+    /**
+     * @param $extension
+     * @return mixed
+     */
     public function setExtension($extension)
     {
         return $this->extension = $extension;
     }
 
-    public function absolute()
+    /**
+     * @return mixed|null|string
+     * @throws UtilException
+     */
+    public function getContent($binaryMode = false)
     {
-        $extension = null;
-        if (isset($this->extension)) {
-            $extension = '.' . $this->extension;
-        }
-        return $this->folder . '/' . $this->filename . $extension;
-    }
 
-    public function isFile()
-    {
-        return is_file($this->absolute());
-    }
-
-    public function getContent()
-    {
         if ($this->isUrl) {
             return $this->curlGetContent($this->absolute());
         }
         if (!$this->isFile()) {
             throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
         }
-
-        $handle = fopen($this->absolute(), 'r');
+        if ($binaryMode) {
+            $binaryMode = 'b';
+        } else {
+            $binaryMode = null;
+        }
+        $handle = fopen($this->absolute(), 'r' . $binaryMode);
         $return = null;
         while (($buffer = fgets($handle)) !== false) {
             $return .= $buffer;
@@ -109,75 +143,19 @@ class File
         return $return;
     }
 
-    public function touch()
-    {
-        if (!$this->isFile()) {
-            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
-        }
-        touch($this->absolute());
-    }
-
-    public function getTime()
-    {
-        if (!$this->isFile()) {
-            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
-        }
-        filemtime($this->absolute());
-    }
-
+    /**
+     * @param $content
+     */
     public function setContent($content)
     {
         $this->createFolder();
         file_put_contents($this->absolute(), $content);
     }
 
-    public function createFolder()
-    {
-        if (is_dir($this->folder)) {
-            return;
-        }
-        mkdir($this->folder, 0777, true);
-    }
-
-    public function getSize()
-    {
-        if (!$this->isFile()) {
-            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
-        }
-        return filesize($this->absolute());
-    }
-
-    public function getArray()
-    {
-        return explode('/', $this->absolute());
-    }
-
-    public function __toString()
-    {
-        return $this->absolute();
-    }
-
-    public function remove()
-    {
-        if (!$this->isFile()) {
-            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
-        }
-        unlink($this->absolute());
-    }
-
-    public function match($regex)
-    {
-        if (!$this->isFile()) {
-            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
-        }
-        return preg_match($regex, $this->getName());
-    }
-
-    public function isUrl()
-    {
-        return $this->isUrl;
-    }
-
+    /**
+     * @param $url
+     * @return mixed
+     */
     private function curlGetContent($url)
     {
         $ch = curl_init();
@@ -189,5 +167,140 @@ class File
         $data = curl_exec($ch);
         curl_close($ch);
         return $data;
+    }
+
+    /**
+     * @return string
+     */
+    public function absolute()
+    {
+        $extension = null;
+        if (isset($this->extension)) {
+            $extension = '.' . $this->extension;
+        }
+        return $this->folder . '/' . $this->filename . $extension;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isFile()
+    {
+        return is_file($this->absolute());
+    }
+
+    /**
+     *
+     */
+    public function createFolder()
+    {
+        if (is_dir($this->folder)) {
+            return;
+        }
+        mkdir($this->folder, 0777, true);
+    }
+
+    /**
+     * @throws UtilException
+     */
+    public function touch()
+    {
+        if (!$this->isFile()) {
+            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
+        }
+        touch($this->absolute());
+    }
+
+    /**
+     * @throws UtilException
+     */
+    public function getTime()
+    {
+        if (!$this->isFile()) {
+            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
+        }
+        filemtime($this->absolute());
+    }
+
+    /**
+     * @return int
+     * @throws UtilException
+     */
+    public function getSize()
+    {
+        if (!$this->isFile()) {
+            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
+        }
+        return filesize($this->absolute());
+    }
+
+    /**
+     * @return array
+     */
+    public function getArray()
+    {
+        return explode('/', $this->absolute());
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->absolute();
+    }
+
+    /**
+     * @throws UtilException
+     */
+    public function remove()
+    {
+        if (!$this->isFile()) {
+            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
+        }
+        unlink($this->absolute());
+    }
+
+    /**
+     * @param $regex
+     * @return int
+     * @throws UtilException
+     */
+    public function match($regex)
+    {
+        if (!$this->isFile()) {
+            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
+        }
+        return preg_match($regex, $this->getName());
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getName()
+    {
+        return $this->basename;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUrl()
+    {
+        return $this->isUrl;
+    }
+
+    /**
+     * @param $algo
+     * @param bool $rowOutput
+     * @return string
+     * @throws UtilException
+     */
+    public function getHash($algo, $rowOutput = false)
+    {
+        if (!$this->isFile()) {
+            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
+        }
+        return hash_file($algo, $this->absolute(), $rowOutput);
     }
 }
