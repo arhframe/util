@@ -23,10 +23,6 @@ class File
      */
     private $extension;
     /**
-     * @var
-     */
-    private $content;
-    /**
      * @var bool
      */
     private $isUrl = false;
@@ -176,6 +172,12 @@ class File
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        $proxy = Proxy::getProxyHttp();
+        if (!empty($proxy)) {
+            curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        }
         $data = curl_exec($ch);
         curl_close($ch);
         return $data;
