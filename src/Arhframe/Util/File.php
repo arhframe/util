@@ -121,7 +121,7 @@ class File
     {
 
         if ($this->isUrl) {
-            return $this->curlGetContent($this->absolute());
+            return $this->httpGetContent($this->absolute());
         }
         if (!$this->isFile()) {
             throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
@@ -150,6 +150,18 @@ class File
     {
         $this->createFolder();
         file_put_contents($this->absolute(), $content);
+    }
+
+    private function httpGetContent($url)
+    {
+        if (function_exists('curl_exec')) {
+            return $this->curlGetContent($url);
+        }
+        $context = Proxy::createStreamContext();
+        if (empty($context)) {
+            return file_get_contents($url);
+        }
+        return file_get_contents($url, false, $context);
     }
 
     /**
