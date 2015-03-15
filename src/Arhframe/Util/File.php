@@ -317,4 +317,24 @@ class File
         }
         return hash_file($algo, $this->absolute(), $rowOutput);
     }
+
+    /**
+     * @param $sha1ToCheck
+     * @return bool
+     * @throws UtilException
+     */
+    public function checksumSha1($sha1ToCheck)
+    {
+        return $sha1ToCheck == $this->getHash('sha1');
+    }
+
+    /**
+     * @param $md5ToCheck
+     * @return bool
+     * @throws UtilException
+     */
+    public function checksumMd5($md5ToCheck)
+    {
+        return $md5ToCheck == $this->getHash('md5');
+    }
 }
