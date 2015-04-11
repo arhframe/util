@@ -228,7 +228,7 @@ class Folder
         $folders = $newArray;
         if ($recursive) {
             foreach ($folders as $folder) {
-                $newArray = array_merge($newArray, $folder->getFolders($regex, $recursive));
+                $newArray = array_merge($folder->getFolders($regex, $recursive), $newArray);
             }
         }
         return $newArray;
