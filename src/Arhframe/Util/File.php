@@ -46,41 +46,12 @@ class File
     }
 
     /**
-     * @return string
-     */
-    public function getFolder()
-    {
-        $folder = $this->folder;
-        if (!is_dir($this->folder) && $folder[0] != '/') {
-            $folder = '/' . $folder;
-        }
-        return $folder;
-    }
-
-    /**
-     * @param $folder
-     * @return mixed
-     */
-    public function setFolder($folder)
-    {
-        return $this->folder = $folder;
-    }
-
-    /**
      * @param $basename
      * @return mixed
      */
     public function setName($basename)
     {
         return $this->basename = $basename;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getBase()
-    {
-        return $this->filename;
     }
 
     /**
@@ -110,6 +81,7 @@ class File
     }
 
     /**
+     * @param bool $binaryMode
      * @return mixed|null|string
      * @throws UtilException
      */
@@ -137,15 +109,6 @@ class File
         }
         fclose($handle);
         return $return;
-    }
-
-    /**
-     * @param $content
-     */
-    public function setContent($content)
-    {
-        $this->createFolder();
-        file_put_contents($this->absolute(), $content);
     }
 
     private function httpGetContent($url)
@@ -204,6 +167,60 @@ class File
     }
 
     /**
+     * @return mixed
+     */
+    public function getBase()
+    {
+        return $this->filename;
+    }
+
+    /**
+     * @return Folder
+     */
+    public function getFolderObject()
+    {
+        return new Folder($this->getFolder());
+    }
+
+    /**
+     * @return string
+     */
+    public function getFolder()
+    {
+        $folder = $this->folder;
+        if (!is_dir($this->folder) && $folder[0] != '/' && !$this->isUrl()) {
+            $folder = '/' . $folder;
+        }
+        return $folder;
+    }
+
+    /**
+     * @param $folder
+     * @return mixed
+     */
+    public function setFolder($folder)
+    {
+        return $this->folder = $folder;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isUrl()
+    {
+        return $this->isUrl;
+    }
+
+    /**
+     * @param $content
+     */
+    public function setContent($content)
+    {
+        $this->createFolder();
+        file_put_contents($this->absolute(), $content);
+    }
+
+    /**
      *
      */
     public function createFolder()
@@ -219,8 +236,8 @@ class File
      */
     public function touch()
     {
-        if (!$this->isFile()) {
-            throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
+        if (!is_dir($this->folder)) {
+            throw new UtilException("Folder '" . $this->folder . "' doesn't exist.");
         }
         touch($this->absolute());
     }
@@ -233,7 +250,7 @@ class File
         if (!$this->isFile()) {
             throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
         }
-        filemtime($this->absolute());
+        return filemtime($this->absolute());
     }
 
     /**
@@ -277,7 +294,7 @@ class File
 
     /**
      * @param $regex
-     * @return int
+     * @return bool
      * @throws UtilException
      */
     public function match($regex)
@@ -285,7 +302,7 @@ class File
         if (!$this->isFile()) {
             throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
         }
-        return preg_match($regex, $this->getName());
+        return preg_match($regex, $this->getName()) === 1;
     }
 
     /**
@@ -297,11 +314,13 @@ class File
     }
 
     /**
+     * @param $sha1ToCheck
      * @return bool
+     * @throws UtilException
      */
-    public function isUrl()
+    public function checksumSha1($sha1ToCheck)
     {
-        return $this->isUrl;
+        return $sha1ToCheck == $this->getHash('sha1');
     }
 
     /**
@@ -316,16 +335,6 @@ class File
             throw new UtilException("File '" . $this->absolute() . "' doesn't exist.");
         }
         return hash_file($algo, $this->absolute(), $rowOutput);
-    }
-
-    /**
-     * @param $sha1ToCheck
-     * @return bool
-     * @throws UtilException
-     */
-    public function checksumSha1($sha1ToCheck)
-    {
-        return $sha1ToCheck == $this->getHash('sha1');
     }
 
     /**
