@@ -85,7 +85,8 @@ class FileTest extends \PHPUnit_Framework_TestCase
     {
         $file = new File(FileTest::$URL);
         $this->assertTrue($file->isUrl());
-        $this->assertFalse(empty($file->getContent()));
+        $haveContent = empty($file->getContent());
+        $this->assertFalse($haveContent);
     }
 
     /**
