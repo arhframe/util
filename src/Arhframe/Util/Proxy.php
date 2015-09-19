@@ -52,6 +52,9 @@ class Proxy
                 $proxyUri = $proxy;
                 break;
             }
+            if (!isset($_SERVER[$proxyKey])) {
+                continue;
+            }
             $proxy = $_SERVER[$proxyKey];
             if (!empty($proxy)) {
                 $proxyUri = $proxy;
