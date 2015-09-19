@@ -52,7 +52,11 @@ class Folder
      */
     public function getArray()
     {
-        return explode('/', $this->folder);
+        $folder = $this->folder;
+        if (DIRECTORY_SEPARATOR == '\\') {
+            $folder = str_replace('\\', '/', $this->folder);
+        }
+        return explode('/', $folder);
     }
 
     /**
@@ -65,17 +69,28 @@ class Folder
         $this->folder = implode('/', $array);
     }
 
+
+    public function popReverse()
+    {
+        $array = $this->getArray();
+        if (DIRECTORY_SEPARATOR == '\\' && $array[0][1] == ':') {
+            unset($array[1]);
+        } else {
+            unset($array[0]);
+        }
+        $this->folder = implode('/', $array);
+    }
+
     /**
      * @throws UtilException
      */
-    public function popReverse()
+    public function truncate()
     {
         if (!$this->isFolder()) {
             throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
         }
-        $array = $this->getArray();
-        unset($array[1]);
-        $this->folder = implode('/', $array);
+        rmdir($this->absolute());
+        $this->create();
     }
 
     /**
@@ -95,18 +110,6 @@ class Folder
     }
 
     /**
-     * @throws UtilException
-     */
-    public function truncate()
-    {
-        if (!$this->isFolder()) {
-            throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
-        }
-        rmdir($this->absolute());
-        $this->create();
-    }
-
-    /**
      * @param int $perm
      */
     public function create($perm = 0777)
@@ -122,7 +125,7 @@ class Folder
      * @param bool $recursive
      * @throws UtilException
      */
-    public function removeFiles($regex = "#.*#", $recursive = false)
+    public function removeFiles($regex = null, $recursive = false)
     {
         if (!$this->isFolder()) {
             throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
@@ -138,61 +141,45 @@ class Folder
      * @return File[]
      * @throws UtilException
      */
-    public function getFiles($regex, $recursive = false)
+    public function getFiles($regex = null, $recursive = false)
     {
         if (!$this->isFolder()) {
             throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
         }
-        if (empty($regex) && !$recursive) {
-            return $this->getFilesSimple();
-        }
-        $newArray = $this->getFilesSimple($regex);
-        $files = $newArray;
-        if ($recursive) {
-            foreach ($files as $file) {
-                if ($file instanceof Folder) {
-                    $newArray = array_merge($newArray, $file->getFiles($regex, $recursive));
-                }
+        $folders = array();
+        $iterator = $this->constructIterator($regex, $recursive);
+        foreach ($iterator as $fileInfo) {
+            if ($fileInfo->isDir()) {
+                continue;
+            }
 
-            }
+            $folders[] = new File($fileInfo->getPathname());
         }
-        $finalArray = array();
-        foreach ($newArray as $file) {
-            if ($file instanceof File) {
-                $finalArray[] = $file;
-            }
-        }
-        return $finalArray;
+        return $folders;
     }
 
     /**
      * @param null $regex
-     * @return File[]
-     * @throws UtilException
+     * @param bool|false $recursive
+     * @return \DirectoryIterator|\RecursiveDirectoryIterator|\RecursiveIteratorIterator|\RegexIterator
      */
-    public function getFilesSimple($regex = null)
+    private function constructIterator($regex = null, $recursive = false)
     {
-        if (!$this->isFolder()) {
-            throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
+        if ($recursive) {
+            $iterator = new \RecursiveDirectoryIterator($this->folder, \RecursiveDirectoryIterator::SKIP_DOTS);
+            $iterator = new \RecursiveIteratorIterator(
+                $iterator,
+                \RecursiveIteratorIterator::SELF_FIRST,
+                \RecursiveIteratorIterator::CATCH_GET_CHILD);
+        } else {
+            $iterator = new \DirectoryIterator($this->folder);
         }
-        $array = glob($this->folder . '/*');
-        if (empty($array)) {
-            return array();
+
+        if (!empty($regex)) {
+            $iterator = new \RegexIterator($iterator, $regex, \RegexIterator::MATCH);
         }
-        $newArray = array();
-        foreach ($array as $value) {
-            if (is_dir($value)) {
-                $file = new Folder($value);
-            } else {
-                $file = new File($value);
-            }
-            if ((!empty($regex) && $file->match($regex)) || $file instanceof Folder) {
-                $newArray[] = $file;
-            } else if (empty($regex)) {
-                $newArray[] = $file;
-            }
-        }
-        return $newArray;
+
+        return $iterator;
     }
 
     /**
@@ -200,7 +187,7 @@ class Folder
      * @param bool $recursive
      * @throws UtilException
      */
-    public function removeFolders($regex = "#.*#", $recursive = false)
+    public function removeFolders($regex = null, $recursive = false)
     {
         if (!$this->isFolder()) {
             throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
@@ -218,51 +205,47 @@ class Folder
      */
     public function getFolders($regex = null, $recursive = false)
     {
-        if (empty($regex) && !$recursive) {
-            return $this->getFoldersSimple();
-        }
         if (!$this->isFolder()) {
             throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
         }
-        $newArray = $this->getFoldersSimple($regex);
-        $folders = $newArray;
-        if ($recursive) {
-            foreach ($folders as $folder) {
-                $newArray = array_merge($folder->getFolders($regex, $recursive), $newArray);
+        $folders = array();
+        $iterator = $this->constructIterator($regex, $recursive);
+        foreach ($iterator as $fileInfo) {
+            if (!$fileInfo->isDir()
+                || $fileInfo->getFilename() == '.'
+                || $fileInfo->getFilename() == '..'
+            ) {
+                continue;
             }
+
+            $folders[] = new Folder($fileInfo->getPathname());
         }
-        return $newArray;
+        return $folders;
     }
 
     /**
-     * @param null $regex
-     * @return Folder[]
      * @throws UtilException
      */
-    public function getFoldersSimple($regex = null)
+    public function remove()
     {
         if (!$this->isFolder()) {
             throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
         }
-        $array = glob($this->folder . '/*', GLOB_ONLYDIR);
-        if (empty($array)) {
-            return array();
+        $files = $this->getFiles(null, true);
+        foreach ($files as $file) {
+            $file->remove();
         }
-        $newArray = array();
-        foreach ($array as $value) {
-            $folder = new Folder($value);
-            if (!empty($regex) && $folder->match($regex)) {
-                $newArray[] = $folder;
-            } else if (empty($regex)) {
-                $newArray[] = $folder;
-            }
+        $folders = $this->getFolders(null, true);
+        foreach ($folders as $folder) {
+            $folder->remove();
         }
-        return $newArray;
+
+        rmdir($this->absolute());
     }
 
     /**
      * @param $regex
-     * @return int
+     * @return bool
      * @throws UtilException
      */
     public function match($regex)
@@ -270,7 +253,7 @@ class Folder
         if (!$this->isFolder()) {
             throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
         }
-        return preg_match($regex, $this->getName());
+        return preg_match($regex, $this->getName()) === 1;
     }
 
     /**
@@ -282,14 +265,4 @@ class Folder
         return $array[count($array) - 1];
     }
 
-    /**
-     * @throws UtilException
-     */
-    public function remove()
-    {
-        if (!$this->isFolder()) {
-            throw new UtilException("Folder '" . $this->absolute() . "' doesn't exist.");
-        }
-        rmdir($this->absolute());
-    }
 }
